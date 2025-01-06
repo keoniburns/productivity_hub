@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QComboBox,
 )
 from PyQt6.QtCore import Qt, QDate, QTime
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QTextCharFormat, QColor, QFont, QPen
 
 
 class AddEventDialog(QDialog):
@@ -31,7 +31,7 @@ class AddEventDialog(QDialog):
                 background-color: #1e1e1e;
                 color: #f8f8f2;
                 border: 1px solid #404040;
-                border-radius: 4px;
+                border-radius: 10px;
                 padding: 8px;
                 font-size: 14px;
             }
@@ -50,7 +50,7 @@ class AddEventDialog(QDialog):
                 background-color: #1e1e1e;
                 color: #f8f8f2;
                 border: 1px solid #404040;
-                border-radius: 4px;
+                border-radius: 10px;
                 padding: 8px;
                 min-width: 70px;
             }
@@ -58,14 +58,7 @@ class AddEventDialog(QDialog):
             QComboBox::drop-down {
                 border: none;
             }
-            
-            QComboBox::down-arrow {
-                image: none;
-                border-top: 5px solid #f8f8f2;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                margin-right: 8px;
-            }
+    
             
             QComboBox:on {
                 border: 1px solid #6272a4;
@@ -74,19 +67,14 @@ class AddEventDialog(QDialog):
             QComboBox QAbstractItemView {
                 background-color: #1e1e1e;
                 color: #f8f8f2;
-                selection-background-color: #44475a;
-            }
-            
-            /* Hide the focus rectangle */
-            QComboBox:focus {
-                border: 1px solid #6272a4;
+                selection-background-color: #4d4d4d;
             }
             
             QPushButton {
                 background-color: #44475a;
                 color: #f8f8f2;
                 border: none;
-                border-radius: 4px;
+                border-radius: 10px;
                 padding: 8px 16px;
                 min-width: 80px;
             }
@@ -163,11 +151,6 @@ class AddEventDialog(QDialog):
                 color: #f8f8f2;
                 selection-background-color: #44475a;
             }
-            
-            /* Hide the focus rectangle */
-            QComboBox:focus {
-                border: 1px solid #6272a4;
-            }
         """
         )
 
@@ -211,8 +194,8 @@ class AddEventDialog(QDialog):
 class CalendarView(QWidget):
     def __init__(self):
         super().__init__()
-
-        # Create main layout
+        
+        # Create main layout with proper spacing
         layout = QHBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
@@ -220,90 +203,118 @@ class CalendarView(QWidget):
         # Create left panel for tasks
         tasks_widget = QWidget()
         tasks_layout = QVBoxLayout(tasks_widget)
+        tasks_layout.setSpacing(10)
 
-        # Add date label
+        # tasks_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Header layout with date and add button
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Date label styling
         self.selected_date_label = QLabel()
-        self.selected_date_label.setStyleSheet(
-            """
+        self.selected_date_label.setStyleSheet("""
             QLabel {
                 color: #f8f8f2;
-                font-size: 16px;
+                font-size: 18px;
                 font-weight: bold;
-                padding: 10px;
+                padding: 5px;
             }
-        """
-        )
-        tasks_layout.addWidget(self.selected_date_label)
+        """)
+        
+        # Add button styling
+        self.add_event_btn = QPushButton("+")
+        self.add_event_btn.setFixedSize(32, 32)
+        self.add_event_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #44475a;
+                color: #f8f8f2;
+                border: none;
+                border-radius: 16px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #6272a4;
+            }
+        """)
+        
+        header_layout.addWidget(self.selected_date_label)
+        header_layout.addWidget(self.add_event_btn)
+        tasks_layout.addLayout(header_layout)
 
-        # Add "Nothing planned" label
+        # Nothing planned label
         self.no_events_label = QLabel("Nothing planned")
         self.no_events_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.no_events_label.setStyleSheet(
-            """
+        self.no_events_label.setStyleSheet("""
             QLabel {
                 color: #6272a4;
                 font-size: 14px;
                 font-style: italic;
                 padding: 20px;
             }
-        """
-        )
+        """)
         tasks_layout.addWidget(self.no_events_label)
-
         tasks_layout.addStretch()
-        tasks_widget.setStyleSheet(
-            """
+
+        # Style the tasks panel
+        tasks_widget.setStyleSheet("""
             QWidget {
                 background-color: #1e1e1e;
-                border-radius: 10px;
-                color: #f8f8f2;
+                border-radius: 8px;
             }
-        """
-        )
-        layout.addWidget(tasks_widget)
-
-        # Create calendar widget
+        """)
+        
+        # Calendar styling
         self.calendar = QCalendarWidget()
-        self.calendar.setGridVisible(True)
-        self.calendar.setVerticalHeaderFormat(
-            QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader
-        )
-        self.calendar.setNavigationBarVisible(True)
+        self.calendar.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
 
-        # Connect date selection signal
-        self.calendar.selectionChanged.connect(self.on_date_selected)
+        # Mark today's date with a custom format
+        today = QDate.currentDate()
+        today_format = QTextCharFormat()
+        today_format.setForeground(QColor("#50fa7b"))  # Dracula theme green
+        today_format.setBackground(QColor("#1e1e1e"))  # Match calendar background
+        today_format.setFontWeight(QFont.Weight.Bold)
+        today_format.setFontFamily("Noto Sans")
+        today_format.setFontUnderline(True)
+        today_format.setUnderlineColor(QColor("#50fa7b"))
+        self.calendar.setDateTextFormat(today, today_format)
 
-        # Set today's date by default
-        self.on_date_selected()
+        # Create selected date format
+        self.selected_format = QTextCharFormat()
+        self.selected_format.setForeground(QColor("#f8f8f2"))
+        self.selected_format.setBackground(QColor("#1e1e1e"))
+        self.selected_format.setFontWeight(QFont.Weight.Bold)
+        self.selected_format.setProperty(QTextCharFormat.Property.OutlinePen, QPen(QColor("#6272a4"), 2))
 
-        # Style the calendar
-        self.calendar.setStyleSheet(
-            """
+        # Connect selection changed signal
+        self.calendar.selectionChanged.connect(self.update_selected_date_format)
+
+        self.calendar.setStyleSheet("""
+            /* Main calendar widget */
             QCalendarWidget {
                 background-color: #1e1e1e;
-                border-radius: 10px;
             }
             
-            /* Navigation bar styling */
             QCalendarWidget QWidget#qt_calendar_navigationbar {
                 background-color: #1e1e1e;
-                padding: 16px;
-                border-top-left-radius: 10px;
-                border-top-right-radius: 10px;
+                padding: 4px;
             }
             
-            /* Month/Year buttons */
+            /* Month/Year labels */
             QCalendarWidget QToolButton {
                 color: #f8f8f2;
                 background-color: transparent;
-                border-radius: 4px;
+                border-radius: 10px;
+                padding: 4px 8px;
                 margin: 2px;
-                padding: 8px 16px;
-                font-size: 16px;
-                font-weight: bold;
+                font-size: 14px;
             }
-
-            /* Navigation arrows */
+            QCalendarWidget QToolButton:hover {
+                background-color: #44475a;
+            }
+            
+            /* Arrow buttons */
             QCalendarWidget QToolButton::menu-indicator { 
                 image: none;
             }
@@ -318,167 +329,40 @@ class CalendarView(QWidget):
                 qproperty-text: "▶";
             }
             
-            QCalendarWidget QToolButton:hover {
-                background-color: #44475a;
-            }
-            
-            /* Calendar table */
+            /* Calendar grid */
             QCalendarWidget QTableView {
                 background-color: #1e1e1e;
-                selection-background-color: #3d3d3d;
-                selection-color: #f8f8f2;
-                alternate-background-color: transparent;
-                gridline-color: #2d2d2d;
-            }
-            
-            /* Header row (Mon to Sun) */
-            QCalendarWidget QTableView QHeaderView::section {
-                color: #6272a4;
-                padding: 8px;
-                font-size: 13px;
-                font-weight: normal;
+                alternate-background-color: #1e1e1e;
+                outline: none;
                 border: none;
-                border-bottom: 1px solid #2d2d2d;
-                background-color: #1e1e1e;
+                border-radius: 10px;
             }
             
             /* Date cells */
             QCalendarWidget QTableView QAbstractItemView {
-                outline: 0;
+                outline: none;
                 color: #f8f8f2;
-                font-size: 13px;
-                font-weight: normal;
-                padding: 0px;
-                border: 1px solid #2d2d2d;
-                min-height: 60px;
-            }
-            
-            /* Individual date numbers */
-            QCalendarWidget QTableView QAbstractItemView::item {
-                color: #f8f8f2;
-                margin: 0px;
-
-                text-align: left;
-                vertical-align: top;
-            }
-            
-            /* Selected date */
-            QCalendarWidget QTableView QAbstractItemView:selected {
-                background-color: #3d3d3d;
-                border-radius: 0px;
-                color: #f8f8f2;
-            }
-            
-            /* Today */
-            QCalendarWidget QTableView QAbstractItemView[today="true"] {
-                background-color: #44475a;
-                border-radius: 20px;
-                font-weight: bold;
-            }
-            
-            /* Hovered date */
-            QCalendarWidget QTableView QAbstractItemView:hover:!selected {
-                background-color: #44475a;
-                border-radius: 20px;
-            }
-            
-            /* Previous/Next month dates */
-            QCalendarWidget QTableView QAbstractItemView:disabled {
-                color: #44475a;
-            }
-            
-            /* Spinbox for year */
-            QCalendarWidget QSpinBox {
-                color: #f8f8f2;
-                background-color: transparent;
-                selection-background-color: #44475a;
-                selection-color: #f8f8f2;
-                border-radius: 4px;
                 padding: 4px;
-                font-size: 16px;
+                background-color: #1e1e1e;
             }
             
-            /* Calendar date cells */
-            QCalendarWidget QTableView {
-                selection-background-color: #44475a;
-                selection-color: #f8f8f2;
+            /* Out of month dates */
+            QCalendarWidget QTableView QAbstractItemView:!enabled {
+                color: #3d3d3d;
             }
+        """)
 
-            QCalendarWidget QTableView QTableCornerButton::section {
-                background-color: #282a36;
-            }
+        # Add widgets to layout
+        layout.addWidget(tasks_widget, 1)  # 1 part
+        layout.addWidget(self.calendar, 2)  # 2 parts
 
-            /* Individual date cells */
-            QCalendarWidget QTableView QLabel {
-                qproperty-alignment: 'AlignTop | AlignLeft';
-                padding: 2px;
-            }
-
-            /* Weekend numbers */
-            QCalendarWidget QTableView {
-                alternate-background-color: transparent;
-            }
-            
-            QCalendarWidget QAbstractItemView:enabled {
-                color: #f8f8f2;  /* Weekday color */
-            }
-            
-            QCalendarWidget QAbstractItemView:disabled {
-                color: #44475a;  /* Weekend color */
-            }
-            
-            /* Weekend day headers (Sat/Sun) */
-            QCalendarWidget QTableView QHeaderView::section:first,
-            QCalendarWidget QTableView QHeaderView::section:last {
-                color: #44475a;
-            }
-
-            /* All date numbers default color */
-            QCalendarWidget QTableView QAbstractItemView {
-                color: #f8f8f2;
-            }
-
-            /* Weekend numbers specifically */
-            QCalendarWidget QTableView QAbstractItemView[weekendDay="true"] {
-                color: #44475a;
-            }
-        """
-        )
-
-        # Add calendar to layout
-        layout.addWidget(self.calendar)
-
-        # Set layout stretch factors
-        layout.setStretch(0, 1)  # Tasks panel
-        layout.setStretch(1, 2)  # Calendar
-
-        # Add event button
-        self.add_event_btn = QPushButton()
-        self.add_event_btn.setIcon(QIcon.fromTheme("list-add"))
-        self.add_event_btn.setFixedSize(32, 32)
-        self.add_event_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #44475a;
-                border: none;
-                border-radius: 8px;
-                padding: 8px;
-            }
-            QPushButton:hover {
-                background-color: #6272a4;
-            }
-        """
-        )
+        # Connect signals
+        self.calendar.selectionChanged.connect(self.on_date_selected)
+        self.calendar.activated.connect(self.show_add_event_dialog)
         self.add_event_btn.clicked.connect(self.show_add_event_dialog)
 
-        # Add button to tasks layout (after date label)
-        date_button_layout = QHBoxLayout()
-        date_button_layout.addWidget(self.selected_date_label)
-        date_button_layout.addWidget(self.add_event_btn)
-        tasks_layout.insertLayout(0, date_button_layout)
-
-        # Connect double-click signal
-        self.calendar.activated.connect(self.show_add_event_dialog)
+        # Initialize with today's date
+        self.on_date_selected()
 
     def on_date_selected(self):
         selected_date = self.calendar.selectedDate()
@@ -495,3 +379,23 @@ class CalendarView(QWidget):
                 f"New event: {event_title} at {event_time.toString('hh:mm')} {period}"
             )
             # TODO: Save event to database
+
+    def update_selected_date_format(self):
+        # Get today's date and selected date
+        today = QDate.currentDate()
+        selected_date = self.calendar.selectedDate()
+        
+        # If selected date is today, keep today's format
+        if selected_date == today:
+            today_format = QTextCharFormat()
+            today_format.setForeground(QColor("#50fa7b"))
+            today_format.setBackground(QColor("#1e1e1e"))
+            today_format.setFontWeight(QFont.Weight.Bold)
+            today_format.setFontFamily("Noto Sans")
+            today_format.setFontUnderline(True)
+            today_format.setUnderlineColor(QColor("#50fa7b"))
+            today_format.setProperty(QTextCharFormat.Property.OutlinePen, QPen(QColor("#6272a4"), 2))
+            self.calendar.setDateTextFormat(selected_date, today_format)
+        else:
+            # Apply selected format to the newly selected date
+            self.calendar.setDateTextFormat(selected_date, self.selected_format)

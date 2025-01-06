@@ -143,60 +143,55 @@ class LeetCodeView(QWidget):
 
     def setup_editor(self):
         """Configure the code editor"""
-        # Set up Python lexer with custom colors
         lexer = QsciLexerPython()
-        lexer.setDefaultColor(QColor("#f8f8f2"))  # Default text
-        lexer.setDefaultPaper(QColor("#1e1e1e"))  # Default background
-        lexer.setColor(
-            QColor("#e06c75"), QsciLexerPython.ClassName
-        )  # Class names - coral
-        lexer.setColor(
-            QColor("#61afef"), QsciLexerPython.FunctionMethodName
-        )  # Functions - blue
-        lexer.setColor(QColor("#c678dd"), QsciLexerPython.Keyword)  # Keywords - purple
-        lexer.setColor(
-            QColor("#98c379"), QsciLexerPython.DoubleQuotedString
-        )  # Strings - green
-        lexer.setColor(
-            QColor("#98c379"), QsciLexerPython.SingleQuotedString
-        )  # Strings - green
-        lexer.setColor(
-            QColor("#f8f8f2"), QsciLexerPython.UnclosedString
-        )  # Unclosed strings - white
-        lexer.setColor(
-            QColor("#d4843e"), QsciLexerPython.Comment
-        )  # Comments - rust orange
-        lexer.setColor(QColor("#d19a66"), QsciLexerPython.Number)  # Numbers - orange
-        lexer.setColor(
-            QColor("#e06c75"), QsciLexerPython.HighlightedIdentifier
-        )  # Special identifiers - coral
-        lexer.setColor(QColor("#f8f8f2"), QsciLexerPython.Operator)  # Operators - white
-
+        
+        # Fix the font setup
+        font = lexer.defaultFont(0)
+        font.setPointSize(12)
+        
+        # Apply font and background to all styles
+        for style in range(32):
+            lexer.setFont(font, style)
+            lexer.setPaper(QColor("#1e1e1e"), style)
+        
+        # Configure syntax highlighting with more muted colors
+        lexer.setColor(QColor("#b39ddb"), 1)  # Keywords - soft lavender
+        # Alternative keyword colors you might prefer:
+        # lexer.setColor(QColor("#9e9e9e"), 1)  # Keywords - neutral gray
+        # lexer.setColor(QColor("#a89984"), 1)  # Keywords - warm gray
+        # lexer.setColor(QColor("#d4bfff"), 1)  # Keywords - very soft purple
+        
+        lexer.setColor(QColor("#61afef"), 8)  # ClassName - muted blue
+        lexer.setColor(QColor("#98c379"), 9)  # FunctionMethodName - sage green
+        lexer.setColor(QColor("#e5c07b"), 4)  # DoubleQuotedString - warm gold
+        lexer.setColor(QColor("#e5c07b"), 3)  # SingleQuotedString - warm gold
+        lexer.setColor(QColor("#d19a66"), 2)  # Number - soft orange
+        lexer.setColor(QColor("#7f848e"), 12)  # Comment - subtle gray
+        lexer.setColor(QColor("#abb2bf"), 0)  # Default - light gray
+        
+        # Set default colors
+        lexer.setDefaultPaper(QColor("#1e1e1e"))
+        lexer.setDefaultColor(QColor("#abb2bf"))
+        
         self.editor.setLexer(lexer)
-
-        # Set theme colors using QColor
-        self.editor.setColor(QColor("#f8f8f2"))  # Text color
-        self.editor.setPaper(QColor("#1e1e1e"))  # Background color
-        self.editor.setMarginsForegroundColor(QColor("#f8f8f2"))
+        self.editor.setFont(font)
+        
+        # Configure margins (line numbers)
+        self.editor.setMarginsForegroundColor(QColor("#6272a4"))
         self.editor.setMarginsBackgroundColor(QColor("#1e1e1e"))
-
-        # Line numbers
-        self.editor.setMarginType(0, QsciScintilla.MarginType.NumberMargin)
-        self.editor.setMarginWidth(0, "000")
-
-        # Improved auto-indentation
-        self.editor.setAutoIndent(True)
-        self.editor.setIndentationGuides(True)
-        self.editor.setIndentationsUseTabs(False)  # Use spaces
-        self.editor.setTabWidth(4)  # Python standard
-        self.editor.setIndentationWidth(4)
-        self.editor.setBackspaceUnindents(True)
-
-        # Cursor and caret settings
-        self.editor.setCaretForegroundColor(QColor("#f8f8f2"))
+        self.editor.setMarginWidth(0, "0000")
+        
+        # Configure cursor
+        self.editor.setCaretLineVisible(False)
         self.editor.setCaretWidth(2)
-        self.editor.setCaretLineVisible(True)
-        self.editor.setCaretLineBackgroundColor(QColor("#3d3d3d"))
+        self.editor.setCaretForegroundColor(QColor("#f8f8f2"))
+        
+        # Adjust line spacing
+        self.editor.setExtraAscent(-1)
+        self.editor.setExtraDescent(-1)
+        
+        # Ensure editor background is set
+        self.editor.setPaper(QColor("#1e1e1e"))
 
     def populate_sample_problems(self):
         """Add sample problem categories and problems"""
@@ -233,14 +228,20 @@ class LeetCodeView(QWidget):
 
     def load_problem(self, item):
         """Load the selected problem"""
-        # This will be replaced with actual API call
-        if item.parent():  # If it's a problem (not a category)
+        if item.parent():
             self.description.setText(
                 f"Problem: {item.text(0)}\n\nDescription will be loaded from LeetCode API"
             )
+            
+            # Clear and set new text
+            self.editor.clear()  # Clear first
+            self.editor.setPaper(QColor("#1e1e1e"))  # Reset background
             self.editor.setText(
                 "def solution():\n    # Write your solution here\n    pass"
             )
+            
+            # Force refresh
+            self.editor.recolor()
 
     def submit_solution(self):
         """Submit the solution to LeetCode"""

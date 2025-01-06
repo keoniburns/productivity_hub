@@ -5,15 +5,26 @@ from utils.file_watcher import setup_file_watcher
 
 
 def main():
-    app = QApplication(sys.argv)
+    # Remove --dev from sys.argv before creating QApplication
+    dev_mode = "--dev" in sys.argv
+    if dev_mode:
+        sys.argv.remove("--dev")
 
-    if "--dev" in sys.argv:
-        observer = setup_file_watcher()
+    app = QApplication(sys.argv)
+    
+    # Set up file watcher if in dev mode
+    global observer
+    observer = setup_file_watcher() if dev_mode else None
 
     window = MainWindow()
     window.show()
 
-    sys.exit(app.exec())
+    try:
+        sys.exit(app.exec())
+    finally:
+        if observer:
+            observer.stop()
+            observer.join()
 
 
 if __name__ == "__main__":

@@ -16,11 +16,9 @@ from PyQt6.QtCore import (
     QThread,
     pyqtSignal,
     Qt,
-    QPropertyAnimation,
-    QEasingCurve,
-    QSize,
 )
 
+from PyQt6.QtGui import QColor
 
 class NewsWorker(QThread):
     finished = pyqtSignal(list)
@@ -200,7 +198,7 @@ class NewsCard(QFrame):
             """
             QFrame#newsCard {
                 background-color: #44475a;
-                border: 1px solid #6272a4;
+                border: 1px solid transparent;
                 border-radius: 10px;
                 padding: 0px;
                 margin: 0px;
@@ -227,6 +225,7 @@ class NewsView(QMainWindow):
         self.setCentralWidget(main_widget)
         main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)  # Reduce spacing between main components
 
         # Left panel for topics
         topics_panel = QFrame()
@@ -300,12 +299,14 @@ class NewsView(QMainWindow):
 
         # News container and layout
         news_container = QWidget()
-        news_layout = QVBoxLayout(news_container)  # Define news_layout here
+        news_layout = QVBoxLayout(news_container)
         news_layout.setContentsMargins(0, 0, 0, 0)
+        news_layout.setSpacing(0)  # Reduce spacing in news container
 
         # Scroll area setup
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet(
             """
             QScrollArea {
@@ -341,8 +342,10 @@ class NewsView(QMainWindow):
         )
 
         self.grid_layout = QGridLayout(content)
-        self.grid_layout.setSpacing(10)
-        self.grid_layout.setContentsMargins(10, 10, 10, 10)
+        self.grid_layout.setSpacing(8)
+        self.grid_layout.setContentsMargins(8, 8, 8, 8)
+        self.grid_layout.setColumnStretch(0, 1)
+        self.grid_layout.setColumnStretch(1, 1)
         scroll.setWidget(content)
 
         # Create pagination controls
@@ -410,8 +413,8 @@ class NewsView(QMainWindow):
 
         # Add current page's articles
         for i, article in enumerate(current_articles):
-            row = i // 3  # Integer division for row number
-            col = i % 3  # Modulo for column number
+            row = i // 2
+            col = i % 2
 
             card = NewsCard(
                 article["title"],
