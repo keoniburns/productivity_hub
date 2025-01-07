@@ -1,0 +1,40 @@
+{
+    "name": "productivity-hub",
+    "version": "1.0.0",
+    "description": "Productivity Hub - Calendar, Journal, LeetCode, and News",
+    "main": "dist-electron/main.js",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "start": "electron ."
+    },
+    "dependencies": {
+        "@codemirror/lang-python": "^6.1.6",
+        "@codemirror/theme-one-dark": "^6.1.2",
+        "@emotion/react": "^11.10.6",
+        "@emotion/styled": "^11.10.6",
+        "@mui/icons-material": "^5.15.14",
+        "@mui/material": "^5.15.14",
+        "@mui/x-date-pickers": "^6.18.7",
+        "@mui/x-tree-view": "^6.17.0",
+        "@uiw/react-codemirror": "^4.23.7",
+        "axios": "^1.6.7",
+        "date-fns": "^2.30.0",
+        "electron-store": "^8.1.0",
+        "hoist-non-react-statics": "^3.3.2",
+        "react": "^18.2.0",
+        "react-calendar": "^4.8.0",
+        "react-dom": "^18.2.0",
+        "react-markdown": "^9.0.1",
+        "react-syntax-highlighter": "^15.5.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.48",
+        "@types/react-dom": "^18.2.18",
+        "@vitejs/plugin-react": "^4.3.4",
+        "electron": "^28.1.4",
+        "typescript": "^5.7.2",
+        "vite": "^5.4.11",
+        "vite-plugin-electron": "^0.29.0"
+    }
+}
