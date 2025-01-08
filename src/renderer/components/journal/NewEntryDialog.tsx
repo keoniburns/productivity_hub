@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Stack, Button } from "@mui/material";
+import { Stack, Button, Typography } from "@mui/material";
 import {
   Dialog,
   DialogTitle,
@@ -50,6 +50,7 @@ const selectStyles = {
   },
   "& .MuiSelect-icon": {
     color: "#808080",
+    borderRadius: 8,
   },
   "& .MuiMenu-paper": {
     backgroundColor: "#212121",
@@ -58,9 +59,20 @@ const selectStyles = {
   "& .MuiMenuItem-root": {
     "&:hover": {
       backgroundColor: "rgba(192, 150, 92, 0.1)",
+      borderColor: "#c0965c",
     },
   },
 };
+
+const prompts = [
+  "What's a challenge you're currently facing?",
+  "What are you grateful for today?",
+  "What's something you'd like to achieve this month?",
+  "Describe your ideal day.",
+  "What's a recent lesson you've learned?",
+  "What are 5 things you are grateful for?",
+  "What are 5 things you are proud of?",
+];
 
 export const NewEntryDialog = ({
   open,
@@ -73,11 +85,81 @@ export const NewEntryDialog = ({
     mood: "Neutral",
     tags: [],
   });
+  const [showPromptDialog, setShowPromptDialog] = useState(true);
+  const [selectedPrompt, setSelectedPrompt] = useState<string>("");
 
   const handleClose = () => {
     setEntry({ title: "", content: "", mood: "Neutral", tags: [] });
+    setShowPromptDialog(true);
+    setSelectedPrompt("");
     onClose();
   };
+
+  const handlePromptSelect = (prompt: string | null) => {
+    setShowPromptDialog(false);
+    if (prompt) {
+      setSelectedPrompt(prompt);
+      setEntry({ ...entry, content: `Prompt: ${prompt}\n\n` });
+    }
+  };
+
+  if (showPromptDialog) {
+    return (
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        sx={{
+          "& .MuiDialog-paper": {
+            backgroundColor: "#1a1a1a",
+            borderRadius: "12px",
+            minWidth: "400px",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "#e0e0e0" }}>
+          Choose Writing Style
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => handlePromptSelect(null)}
+              sx={{
+                color: "#c0965c",
+                borderColor: "#333333",
+                "&:hover": { borderColor: "#c0965c" },
+                borderRadius: 10,
+              }}
+            >
+              Free Writing
+            </Button>
+            <Typography sx={{ color: "#808080", mt: 1 }}>
+              Or choose a prompt:
+            </Typography>
+            {prompts.map((prompt) => (
+              <Button
+                key={prompt}
+                fullWidth
+                variant="outlined"
+                onClick={() => handlePromptSelect(prompt)}
+                sx={{
+                  color: "#c0965c",
+                  borderColor: "#333333",
+                  "&:hover": { borderColor: "#c0965c" },
+                  textAlign: "left",
+                  justifyContent: "flex-start",
+                  borderRadius: 10,
+                }}
+              >
+                {prompt}
+              </Button>
+            ))}
+          </Stack>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const handleSave = () => {
     onSave(entry);

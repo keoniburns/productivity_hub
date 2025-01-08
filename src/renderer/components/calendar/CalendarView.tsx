@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, styled, Slider, Button, IconButton, Typography } from "@mui/material";
+import { Box, styled, Slider } from "@mui/material";
 import {
   startOfWeek,
   addDays,
@@ -11,7 +11,8 @@ import {
 import { TimeHeader } from "./TimeHeader";
 import { DayRow } from "./DayRow";
 import { CalendarHeader } from "./CalendarHeader";
-import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+
+// import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 
 const TIMEZONE = {
   offset: -8,
@@ -50,7 +51,6 @@ const CurrentTimeLine = styled(Box)(() => ({
 
 const GmtLabel = styled(Box)(() => ({
   width: "130px",
-
   minWidth: "130px",
   padding: "12px",
   backgroundColor: "#212121",
@@ -68,80 +68,63 @@ const GmtLabel = styled(Box)(() => ({
   justifyContent: "flex-start",
 }));
 
-const ScrollContainer = styled(Box)(() => ({
-  flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  overflow: "auto",
-  "&::-webkit-scrollbar": {
-    height: "12px",
-    backgroundColor: "#1a1a1a",
-  },
-  "&::-webkit-scrollbar-thumb": {
-    backgroundColor: "#c0965c",
-    borderRadius: "6px",
-    "&:hover": {
-      backgroundColor: "#a17c4a",
-    },
-  },
-  "&::-webkit-scrollbar-track": {
-    backgroundColor: "#333333",
-    borderRadius: "6px",
-  },
+const TimeIndicator = styled(Box)(() => ({
+  position: "absolute",
+  top: "-20px",
+  padding: "2px 6px",
+  backgroundColor: "#c0965c",
+  color: "#1a1a1a",
+  fontSize: "0.75rem",
+  borderRadius: "3px",
+  transform: "translateX(-50%)",
+  whiteSpace: "nowrap",
+  zIndex: 4,
 }));
 
-const ScrollBar = styled(Box)(() => ({
-  height: "24px",
-  padding: "2px 0",
-  backgroundColor: "#1a1a1a",
-  display: "flex",
-  alignItems: "center",
-  width: "200px",
-}));
-
-const CustomSlider = styled(Slider)(() => ({
-  color: "#c0965c",
-  '& .MuiSlider-thumb': {
-    backgroundColor: "#c0965c",
-    height: 16,
-    width: 16,
-    '&:hover': {
-      backgroundColor: "#a17c4a",
-    },
-  },
-  '& .MuiSlider-track': {
-    backgroundColor: "#c0965c",
-    height: 4,
-  },
-  '& .MuiSlider-rail': {
-    backgroundColor: "#333333",
-    height: 4,
-  },
-}));
+interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  date: Date;
+  startTime: { hour: number; minute: number };
+  endTime: { hour: number; minute: number };
+}
 
 export const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentTimeLeft, setCurrentTimeLeft] = useState(0);
+  const [currentTimePosition, setCurrentTimePosition] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
   const timeGridRef = useRef<HTMLDivElement>(null);
+  // const [adjustedHours, setAdjustedHours] = useState(0);
+  // const [adjustedMinutes, setAdjustedMinutes] = useState(0);
+  const [currentTime, setCurrentTime] = useState({ hours: 0, minutes: 0 });
+  const [selectedDateTime, setSelectedDateTime] = useState<Date | null>(null);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     const updateTimeIndicator = () => {
       const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
 
-      // Debug logs
-      console.log("Raw time:", hours, ":", minutes);
+      const hoursUTC = now.getUTCHours();
+      const minutesUTC = now.getUTCMinutes();
 
-      // Calculate based on 24-hour range starting at 1 AM
-      const hoursSince1AM = (hours - 1 + 24) % 24;
-      const percentage = ((hoursSince1AM * 60 + minutes) / (24 * 60)) * 100;
+      const adjustedHours = (hoursUTC + TIMEZONE.offset + 24) % 24;
+      const adjustedMinutes = minutesUTC;
 
-      console.log("Hours since 1AM:", hoursSince1AM);
-      console.log("Percentage:", percentage);
-      setCurrentTimeLeft(percentage);
+      const BLOCK_WIDTH = 120;
+
+      const position =
+        adjustedHours * BLOCK_WIDTH + (adjustedMinutes / 60) * BLOCK_WIDTH;
+
+      console.log("UTC Hours:", hoursUTC);
+      console.log("Adjusted Hours:", adjustedHours);
+      console.log("Position in px:", position);
+      // setAdjustedHours(adjustedHours - 12);
+      // setAdjustedMinutes(adjustedMinutes);
+      setCurrentTime({ hours: adjustedHours - 12, minutes: adjustedMinutes });
+
+      setCurrentTimePosition(position);
     };
 
     updateTimeIndicator();
@@ -170,51 +153,68 @@ export const CalendarView = () => {
     setScrollPosition((element.scrollLeft / maxScroll) * 100);
   };
 
-  const handleSliderChange = (_event: Event, newValue: number | number[]) => {
+  const handleSliderChange = (
+    _event: React.ChangeEvent<{}> | null,
+    newValue: number | number[]
+  ) => {
     if (timeGridRef.current) {
-      const maxScroll = timeGridRef.current.scrollWidth - timeGridRef.current.clientWidth;
+      const maxScroll =
+        timeGridRef.current.scrollWidth - timeGridRef.current.clientWidth;
       timeGridRef.current.scrollLeft = (maxScroll * (newValue as number)) / 100;
     }
   };
 
+  useEffect(() => {
+    const handleMouseUp = () => {
+      // Reset any ongoing drag operations in child components
+      const event = new MouseEvent("mouseup");
+      document.dispatchEvent(event);
+    };
+
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => document.removeEventListener("mouseup", handleMouseUp);
+  }, []);
+
+  const handleOpenDialog = (date: Date) => {
+    setSelectedDateTime(date);
+    setDialogOpen(true);
+  };
+
+  const handleCreateEvent = () => {
+    setSelectedDate(new Date());
+    setDialogOpen(true);
+  };
+
+  const handleEventCreate = (newEvent: CalendarEvent) => {
+    setEvents((prevEvents) => [...prevEvents, newEvent]);
+  };
+
+  const handleEventUpdate = (updatedEvent: CalendarEvent) => {
+    setEvents((prevEvents) =>
+      prevEvents.map((event) =>
+        event.id === updatedEvent.id ? updatedEvent : event
+      )
+    );
+  };
+
+  useEffect(() => {
+    const element = timeGridRef.current;
+    if (element) {
+      element.addEventListener("scroll", handleScroll);
+      return () => element.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
   return (
     <CalendarContainer>
-      <Box sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "8px",
-        gap: 3
-      }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconButton onClick={handlePreviousWeek} sx={{ color: "#c0965c" }}>
-            <ChevronLeft />
-          </IconButton>
-          <Typography variant="h6" sx={{ color: "#c0965c" }}>
-            {format(selectedDate, "MMMM yyyy")}
-          </Typography>
-          <IconButton onClick={handleNextWeek} sx={{ color: "#c0965c" }}>
-            <ChevronRight />
-          </IconButton>
-          <ScrollBar>
-            <CustomSlider
-              value={scrollPosition}
-              onChange={handleSliderChange}
-              aria-label="Calendar scroll"
-              size="small"
-            />
-          </ScrollBar>
-        </Box>
-
-
-
-        <Button
-          variant="contained"
-          onClick={() => setDialogOpen(true)}
-        >
-          Create Event
-        </Button>
-      </Box>
+      <CalendarHeader
+        title={format(selectedDate, "MMMM yyyy")}
+        onCreateEvent={handleCreateEvent}
+        onPreviousWeek={handlePreviousWeek}
+        onNextWeek={handleNextWeek}
+        scrollPosition={scrollPosition}
+        onScroll={handleSliderChange}
+      />
 
       <TimeGrid>
         <Box
@@ -226,7 +226,6 @@ export const CalendarView = () => {
             position: "relative",
             height: "calc(100% - 24px)",
           }}
-          onScroll={handleScroll}
         >
           <Box sx={{ position: "relative" }}>
             <Box
@@ -243,8 +242,7 @@ export const CalendarView = () => {
               }}
             >
               <GmtLabel>
-                <span>GMT-</span>
-                <span>{Math.abs(TIMEZONE.offset)}</span>
+                <span>{TIMEZONE.label}</span>
               </GmtLabel>
               <Box sx={{ position: "relative", flex: 1 }}>
                 <TimeHeader />
@@ -253,19 +251,37 @@ export const CalendarView = () => {
             {weekDays.map((day) => (
               <Box key={day.toISOString()} sx={{ position: "relative" }}>
                 {isToday(day) && (
-                  <CurrentTimeLine
-                    sx={{
-                      marginLeft: `${currentTimeLeft}%`,
-                    }}
-                  />
+                  <>
+                    <TimeIndicator
+                      sx={{
+                        left: `${currentTimePosition}px`,
+                      }}
+                    >
+                      {`${String(currentTime.hours).padStart(2, "0")}:${String(
+                        currentTime.minutes
+                      ).padStart(2, "0")}`}
+                    </TimeIndicator>
+                    <CurrentTimeLine
+                      sx={{
+                        left: `${currentTimePosition}px`,
+                        transform: "translateX(-50%)",
+                      }}
+                    />
+                  </>
                 )}
                 <Box
                   data-time={day.toISOString()}
                   sx={{
                     position: "relative",
+                    width: "2880px",
                   }}
                 >
-                  <DayRow date={day} />
+                  <DayRow
+                    date={day}
+                    events={events}
+                    onEventCreate={handleEventCreate}
+                    onEventUpdate={handleEventUpdate}
+                  />
                 </Box>
               </Box>
             ))}
