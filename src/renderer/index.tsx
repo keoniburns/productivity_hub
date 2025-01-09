@@ -4,7 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { Box, Tab, Tabs } from "@mui/material";
 import { CalendarView } from "./components/calendar/CalendarView";
 import { JournalView } from "./components/journal/JournalView";
-import { LeetCodeView } from "./components/leetcode/LeetCodeView";
+import LeetCodeView from "./components/leetcode/LeetCodeView";
 import { NewsView } from "./components/news/NewsView";
 
 const darkTheme = createTheme({
@@ -56,7 +56,13 @@ const App = () => {
   }, []);
 
   return (
-    <Box sx={{ width: "100%", height: "100vh" }}>
+    <Box
+      sx={{
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden", // Prevent scrolling
+      }}
+    >
       <Box
         sx={{
           borderBottom: 1,
@@ -77,7 +83,7 @@ const App = () => {
           <Tab label="Calendar" />
           <Tab label="Journal" />
           <Tab label="LeetCode" />
-          <Tab label="News" />
+          <Tab label="Articles" />
         </Tabs>
       </Box>
       {value === 0 && <CalendarView />}

@@ -1,27 +1,26 @@
-import React, { useState } from "react";
-import { Stack, Button, Typography } from "@mui/material";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
   TextField,
+  Stack,
   FormControl,
   Select,
   MenuItem,
+  Typography,
+  Box,
 } from "@mui/material";
+import { JournalEntry, MOOD_COLORS } from "./types";
 
-interface NewEntryDialogProps {
+interface EntryDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (entry: JournalEntry) => void;
-}
-
-interface JournalEntry {
-  title: string;
-  content: string;
-  mood: string;
-  tags: string[];
+  entry?: JournalEntry | null; // Optional for edit mode
+  isEdit?: boolean;
 }
 
 const textFieldStyles = {
@@ -50,60 +49,62 @@ const selectStyles = {
   },
   "& .MuiSelect-icon": {
     color: "#808080",
-    borderRadius: 8,
-  },
-  "& .MuiMenu-paper": {
-    backgroundColor: "#212121",
-    color: "#e0e0e0",
-  },
-  "& .MuiMenuItem-root": {
-    "&:hover": {
-      backgroundColor: "rgba(192, 150, 92, 0.1)",
-      borderColor: "#c0965c",
-    },
   },
 };
 
-const prompts = [
-  "What's a challenge you're currently facing?",
-  "What are you grateful for today?",
-  "What's something you'd like to achieve this month?",
-  "Describe your ideal day.",
-  "What's a recent lesson you've learned?",
-  "What are 5 things you are grateful for?",
-  "What are 5 things you are proud of?",
-];
+const getWordCount = (text: string): number => {
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
+};
 
-export const NewEntryDialog = ({
+export const EntryDialog = ({
   open,
   onClose,
   onSave,
-}: NewEntryDialogProps) => {
+  entry: initialEntry,
+  isEdit = false,
+}: EntryDialogProps) => {
   const [entry, setEntry] = useState<JournalEntry>({
     title: "",
     content: "",
     mood: "Neutral",
     tags: [],
   });
-  const [showPromptDialog, setShowPromptDialog] = useState(true);
+  const [showPromptDialog, setShowPromptDialog] = useState(!isEdit);
   const [selectedPrompt, setSelectedPrompt] = useState<string>("");
 
+  useEffect(() => {
+    if (isEdit && initialEntry) {
+      setEntry(initialEntry);
+    }
+  }, [isEdit, initialEntry]);
+
   const handleClose = () => {
-    setEntry({ title: "", content: "", mood: "Neutral", tags: [] });
-    setShowPromptDialog(true);
-    setSelectedPrompt("");
     onClose();
+  };
+
+  const handleSave = () => {
+    onSave(entry);
+    onClose();
+  };
+
+  const handleExited = () => {
+    setEntry({ title: "", content: "", mood: "Neutral", tags: [] });
+    setShowPromptDialog(!isEdit);
+    setSelectedPrompt("");
   };
 
   const handlePromptSelect = (prompt: string | null) => {
     setShowPromptDialog(false);
     if (prompt) {
       setSelectedPrompt(prompt);
-      setEntry({ ...entry, content: `Prompt: ${prompt}\n\n` });
+      setEntry({ ...entry, title: prompt });
     }
   };
 
-  if (showPromptDialog) {
+  if (showPromptDialog && !isEdit) {
     return (
       <Dialog
         open={open}
@@ -161,15 +162,13 @@ export const NewEntryDialog = ({
     );
   }
 
-  const handleSave = () => {
-    onSave(entry);
-    setEntry({ title: "", content: "", mood: "Neutral", tags: [] });
-  };
-
   return (
     <Dialog
       open={open}
       onClose={handleClose}
+      TransitionProps={{
+        onExited: handleExited,
+      }}
       sx={{
         "& .MuiDialog-paper": {
           backgroundColor: "#1a1a1a",
@@ -179,16 +178,23 @@ export const NewEntryDialog = ({
         },
       }}
     >
-      <DialogTitle sx={{ color: "#e0e0e0" }}>New Journal Entry</DialogTitle>
+      <DialogTitle sx={{ color: "#e0e0e0" }}>
+        {isEdit ? "Edit Entry" : "New Journal Entry"}
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 2 }}>
-          <TextField
-            fullWidth
-            placeholder="Title"
-            value={entry.title}
-            onChange={(e) => setEntry({ ...entry, title: e.target.value })}
-            sx={textFieldStyles}
-          />
+          {!selectedPrompt && (
+            <TextField
+              fullWidth
+              placeholder="Title"
+              value={entry.title}
+              onChange={(e) => setEntry({ ...entry, title: e.target.value })}
+              sx={textFieldStyles}
+            />
+          )}
+          {selectedPrompt && !isEdit && (
+            <Typography sx={{ color: "#e0e0e0" }}>{selectedPrompt}</Typography>
+          )}
           <TextField
             fullWidth
             multiline
@@ -198,21 +204,55 @@ export const NewEntryDialog = ({
             onChange={(e) => setEntry({ ...entry, content: e.target.value })}
             sx={textFieldStyles}
           />
+          <Typography variant="caption" sx={{ color: "#808080", ml: 1 }}>
+            {getWordCount(entry.content)} words
+          </Typography>
           <FormControl fullWidth>
             <Select
               value={entry.mood}
               onChange={(e) =>
                 setEntry({ ...entry, mood: e.target.value as string })
               }
+              renderValue={(selected) => (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor:
+                        MOOD_COLORS[selected as keyof typeof MOOD_COLORS],
+                      flexShrink: 0,
+                    }}
+                  />
+                  {selected}
+                </Box>
+              )}
               sx={selectStyles}
             >
-              {["Happy", "Peaceful", "Neutral", "Anxious", "Sad"].map(
-                (mood) => (
-                  <MenuItem key={mood} value={mood}>
-                    {mood}
-                  </MenuItem>
-                )
-              )}
+              {Object.keys(MOOD_COLORS).map((mood) => (
+                <MenuItem
+                  key={mood}
+                  value={mood}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    py: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: MOOD_COLORS[mood as keyof typeof MOOD_COLORS],
+                      flexShrink: 0,
+                    }}
+                  />
+                  {mood}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Stack>
@@ -229,9 +269,19 @@ export const NewEntryDialog = ({
             "&:hover": { bgcolor: "#a17c4a" },
           }}
         >
-          Save Entry
+          {isEdit ? "Save Changes" : "Save Entry"}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
+
+const prompts = [
+  "What's a challenge you're currently facing?",
+  "What are you grateful for today?",
+  "What's something you'd like to achieve this month?",
+  "Describe your ideal day.",
+  "What's a recent lesson you've learned?",
+  "What are 5 things you are grateful for?",
+  "What are 5 things you are proud of?",
+];

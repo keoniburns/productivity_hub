@@ -1,5 +1,7 @@
 # you can't control the wind but you can adjust your sails
 
+today is the first day that i have started the 750 word challenge. The inspiration for this came from a youtube video about a homeless japanese kid, who is actually super productive and i found it inspiring to be better in my own life. He said something that stuck with me - "I want to be fulfilled in every aspect of my life". I agree with him and believe this to be the golden carrot that everyone is chasing in their own lives. I also believe that it's an ideal and not nearly as attainable, but that may be due to my own insecurities and pessimism.
+
 ```
 productivity_app/
 ├── src/

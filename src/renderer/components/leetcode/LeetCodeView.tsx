@@ -1,173 +1,200 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-  Button,
-  styled,
-} from "@mui/material";
+import * as React from "react";
+import Box from "@mui/material/Box";
+import { TreeViewBaseItem } from "@mui/x-tree-view/models";
+import { RichTreeView } from "@mui/x-tree-view/RichTreeView";
 import CodeMirror from "@uiw/react-codemirror";
+import { Typography, Paper, Button, Stack } from "@mui/material";
 import { python } from "@codemirror/lang-python";
-import { oneDark } from "@codemirror/theme-one-dark";
 
-const StyledPaper = styled(Paper)(() => ({
-  backgroundColor: "#212121",
-  borderRadius: 8,
-  padding: 20,
-  color: "#e0e0e0",
-}));
-
-interface Problem {
-  id: number;
-  title: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  description: string;
-  starterCode: string;
+interface LeetCodeItem extends TreeViewBaseItem {
+  problem?: {
+    id: number;
+    title: string;
+    difficulty: "Easy" | "Medium" | "Hard";
+    description: string;
+    starterCode: string;
+  };
+  children?: LeetCodeItem[];
 }
 
-const dummyProblems: Problem[] = [
+const PROBLEM_CATEGORIES: LeetCodeItem[] = [
   {
-    id: 1,
-    title: "Two Sum",
-    difficulty: "Easy",
-    description:
-      "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-    starterCode: `def twoSum(self, nums: List[int], target: int) -> List[int]:\n    # Your code here\n    pass`,
+    id: "arrays-hashing",
+    label: "Arrays & Hashing",
+    children: [
+      {
+        id: "two-sum",
+        label: "Two Sum",
+        problem: {
+          id: 1,
+          title: "Two Sum",
+          difficulty: "Easy",
+          description: "Given an array of integers...",
+          starterCode:
+            "def twoSum(self, nums: List[int], target: int):\n    pass",
+        },
+      },
+    ],
   },
   {
-    id: 2,
-    title: "Add Two Numbers",
-    difficulty: "Medium",
-    description:
-      "You are given two non-empty linked lists representing two non-negative integers.",
-    starterCode: `def addTwoNumbers(self, l1: ListNode, l2: ListNode) -> ListNode:\n    # Your code here\n    pass`,
+    id: "two-pointers",
+    label: "Two Pointers",
+    children: [
+      {
+        id: "valid-palindrome",
+        label: "Valid Palindrome",
+        problem: {
+          id: 2,
+          title: "Valid Palindrome",
+          difficulty: "Easy",
+          description: "A phrase is a palindrome if...",
+          starterCode: "def isPalindrome(self, s: str) -> bool:\n    pass",
+        },
+      },
+    ],
   },
 ];
 
-export const LeetCodeView: React.FC = () => {
-  const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
-  const [code, setCode] = useState("");
+export default function LeetCodeView() {
+  const [selectedProblem, setSelectedProblem] = React.useState<
+    LeetCodeItem["problem"] | null
+  >(null);
+  const [code, setCode] = React.useState<string>("");
 
-  const handleEditorChange = (value: string | undefined) => {
-    if (value !== undefined) {
-      setCode(value);
-    }
-  };
+  const handleItemSelect = (event: React.SyntheticEvent, nodeId: string) => {
+    const findProblem = (
+      items: LeetCodeItem[]
+    ): LeetCodeItem["problem"] | undefined => {
+      for (const item of items) {
+        if (item.id === nodeId && item.problem) {
+          setCode(item.problem.starterCode);
+          return item.problem;
+        }
+        if (item.children) {
+          const found = findProblem(item.children);
+          if (found) return found;
+        }
+      }
+    };
 
-  const getDifficultyColor = (difficulty: Problem["difficulty"]) => {
-    switch (difficulty) {
-      case "Easy":
-        return "#00b8a3";
-      case "Medium":
-        return "#ffc01e";
-      case "Hard":
-        return "#ff375f";
-      default:
-        return "#f8f8f2";
+    const problem = findProblem(PROBLEM_CATEGORIES);
+    if (problem) {
+      setSelectedProblem(problem);
     }
   };
 
   return (
-    <Box sx={{ display: "flex", gap: 2, p: 2, height: "calc(100vh - 100px)" }}>
-      <StyledPaper sx={{ width: 300 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
-          Problems
-        </Typography>
-        <List>
-          {dummyProblems.map((problem) => (
-            <ListItem
-              key={problem.id}
-              button
-              onClick={() => {
-                setSelectedProblem(problem);
-                setCode(problem.starterCode);
-              }}
+    <Box sx={{ height: "100%", width: "100%", display: "flex" }}>
+      <Box sx={{ width: 300, borderRight: 1, borderColor: "divider" }}>
+        <RichTreeView
+          items={PROBLEM_CATEGORIES}
+          onItemClick={handleItemSelect}
+          aria-label="LeetCode problems"
+        />
+      </Box>
+      <Box
+        sx={{
+          flex: 1,
+          p: 2,
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          overflow: "hidden",
+          gap: 2,
+        }}
+      >
+        {selectedProblem && (
+          <>
+            <Paper
+              elevation={2}
               sx={{
-                "&:hover": {
-                  backgroundColor: "rgba(192, 150, 92, 0.1)",
-                },
-                backgroundColor:
-                  selectedProblem?.id === problem.id
-                    ? "rgba(192, 150, 92, 0.15)"
-                    : "transparent",
+                p: 2,
+                flex: "0 0 40%",
+                overflowY: "auto",
+                overflowX: "hidden",
               }}
             >
-              <ListItemText
-                primary={problem.title}
-                secondary={
-                  <Typography
-                    sx={{ color: getDifficultyColor(problem.difficulty) }}
-                  >
-                    {problem.difficulty}
-                  </Typography>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      </StyledPaper>
+              <Typography variant="h5" gutterBottom>
+                {selectedProblem.title}
+                <Typography
+                  component="span"
+                  sx={{
+                    ml: 2,
+                    color:
+                      selectedProblem.difficulty === "Easy"
+                        ? "success.main"
+                        : selectedProblem.difficulty === "Medium"
+                        ? "warning.main"
+                        : "error.main",
+                  }}
+                >
+                  {selectedProblem.difficulty}
+                </Typography>
+              </Typography>
+              <Typography>{selectedProblem.description}</Typography>
+            </Paper>
 
-      {selectedProblem ? (
-        <Box sx={{ display: "flex", flexDirection: "column", flex: 1, gap: 2 }}>
-          <StyledPaper>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              {selectedProblem.title}
-            </Typography>
-            <Typography>{selectedProblem.description}</Typography>
-          </StyledPaper>
-
-          <StyledPaper
-            sx={{ flex: 1, display: "flex", flexDirection: "column" }}
-          >
-            <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+            <Paper
+              elevation={2}
+              sx={{
+                flex: "0 0 40%",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                "& .cm-scroller": {
+                  overflowY: "auto !important",
+                  "&::-webkit-scrollbar": {
+                    width: "8px",
+                  },
+                  "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    borderRadius: "4px",
+                  },
+                },
+                "& .cm-editor": {
+                  height: "100%",
+                },
+              }}
+            >
               <CodeMirror
                 value={code}
                 height="100%"
-                theme={oneDark}
-                extensions={[python()]}
                 onChange={(value) => setCode(value)}
-                style={{ fontSize: 14 }}
+                theme="dark"
+                extensions={[python()]}
               />
-            </Box>
-            <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+            </Paper>
+
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                flex: "1",
+                padding: 2,
+                alignItems: "flex-start",
+                justifyContent: "flex-end",
+                pt: 2,
+                mt: 2,
+              }}
+            >
               <Button
                 variant="contained"
-                sx={{
-                  bgcolor: "#c0965c",
-                  "&:hover": { bgcolor: "#a17c4a" },
-                }}
+                color="primary"
+                onClick={() => console.log("Run Tests")}
               >
-                Run Code
+                Run Tests
               </Button>
               <Button
                 variant="contained"
-                sx={{
-                  bgcolor: "#c0965c",
-                  "&:hover": { bgcolor: "#a17c4a" },
-                }}
+                color="success"
+                onClick={() => console.log("Submit")}
               >
                 Submit
               </Button>
-            </Box>
-          </StyledPaper>
-        </Box>
-      ) : (
-        <StyledPaper
-          sx={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography variant="h6" sx={{ color: "#6272a4" }}>
-            Select a problem to begin
-          </Typography>
-        </StyledPaper>
-      )}
+            </Stack>
+          </>
+        )}
+      </Box>
     </Box>
   );
-};
+}
