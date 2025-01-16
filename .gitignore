@@ -106,3 +106,24 @@ docs/source/conf.py
 *.iml
 .project
 .pydevproject
+
+# Electron/Node
+node_modules/
+dist/
+release/
+.env
+
+# Development
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# Production builds
+out/
+*.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
